@@ -1,0 +1,150 @@
+{% extends "index.html" %}
+{% block content %}
+
+<div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+    {% include "header.html" %}
+
+    <main class="mdl-layout__content">
+        <div class="wrapper">
+            <div class="custom-card-wide mdl-card mdl-shadow--2dp">
+                <div id="item-name" class="mdl-card__title">
+                    <h2 class="mdl-card__title-text">{{item.name}}</h2>
+                </div>
+                <div id="item-description" class="mdl-card__supporting-text">
+                    {{item.description}}
+                </div>
+                {% if login_session['username'] %}
+                <h3>{{login_session['username']}}</h3>
+                <div id="form-container">
+                    <form id="item-form" action="/item/{{item.id}}/delete" method="post">
+                        <div class="mdl-card__actions mdl-card--border">
+                            <button class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect"
+                                    onclick="handleEdit(event)">
+                                Edit
+                            </button>
+                            <button class="mdl-button delete-btn mdl-js-button mdl-js-ripple-effect"
+                                    onclick="handleDelete(event)">
+                                Delete
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% include "about.html" %}
+        {% include "footer.html" %}
+    </main>
+</div>
+<script>
+    function handleDelete(e) {
+        e.preventDefault();
+        if (confirm('This action is not reversible. Are you sure?')) {
+            return document.getElementById("item-form").submit();
+        }
+    }
+
+    function cancelEdit(e) {
+        e.preventDefault()
+        let formContainerDOM = document.getElementById("form-container");
+        let itemDescDOM =
+            document
+                .getElementsByClassName('mdl-card__supporting-text')[0];
+        let itemNameDOM = document.getElementById('item-name');
+
+        itemNameDOM.innerHTML = `
+            <h2 class="mdl-card__title-text">{{item.name}}</h2>
+        `;
+
+        itemDescDOM.innerHTML = `{{item.description}}`;
+
+        formContainerDOM.innerHTML = `
+            <form id="item-form" action="/item/{{item.id}}/delete" method="post">
+                <div class="mdl-card__actions mdl-card--border">
+                    <button class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect"
+                            onclick="handleEdit(event)">
+                        Edit
+                    </button>
+                    <button class="mdl-button delete-btn mdl-js-button mdl-js-ripple-effect"
+                            onclick="handleDelete(event)">
+                        Delete
+                    </button>
+                </div>
+            </form>
+        `;
+    }
+
+    function handleSubmit(e) {
+        e.preventDefault();
+        let inputItemDOM = document.getElementById('input-item-name');
+        let txtAreaDOM = document.getElementById('textarea-description');
+        let formDOM = document.getElementById("item-form");
+
+        let newInputName = document.createElement("input");
+        newInputName.type = 'text';
+        newInputName.value = inputItemDOM.value;
+        newInputName.name = 'name';
+        newInputName.className = "display-none";
+
+        let newInputDesc = document.createElement("input");
+        newInputDesc.type = 'text';
+        newInputDesc.value = txtAreaDOM.value.trim();
+        newInputDesc.name = 'description';
+        newInputDesc.className = "display-none";
+
+        formDOM.appendChild(newInputName);
+        formDOM.appendChild(newInputDesc);
+        formDOM.submit();
+    }
+
+    function handleEdit(e) {
+        e.preventDefault();
+        let itemNameDOM = document.getElementById('item-name');
+        let itemDescDOM =
+            document
+                .getElementsByClassName('mdl-card__supporting-text')[0];
+
+        let formContainerDOM = document.getElementById("form-container");
+
+        itemNameDOM.innerHTML = `
+            <div class="mdl-textfield mdl-js-textfield custom-text-field">
+                <input id="input-item-name"
+                    class="mdl-textfield__input"
+                    type="text"
+                    value="{{item.name}}">
+             </div>
+        `;
+
+        itemDescDOM.innerHTML = `
+            <textarea class="mdl-textfield__input"
+                type="text"
+                rows="3"
+                maxrows="10"
+                id="textarea-description">
+            {{item.description}}
+            </textarea>
+        `;
+
+        formContainerDOM.innerHTML = `
+            <form id="item-form" action="/item/{{item.id}}/edit" method="post">
+                <div class="mdl-card__actions mdl-card--border">
+                    <button
+                        class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect"
+                        onclick="handleSubmit(event)"
+                    >
+                        Submit
+                    </button>
+                    <button class="mdl-button delete-btn mdl-js-button mdl-js-ripple-effect"
+                            onclick="cancelEdit(event)">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        `;
+
+        document.getElementById("input-item-name").focus()
+
+    }
+</script>
+<script src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+{% endblock %}

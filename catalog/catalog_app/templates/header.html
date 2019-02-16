@@ -1,0 +1,46 @@
+<header class="mdl-layout__header mdl-layout__header--scroll mdl-color--primary">
+    <div class="mdl-layout--large-screen-only mdl-layout__header-row">
+    </div>
+    <div class="mdl-layout--large-screen-only mdl-layout__header-row">
+        <h2>Catalog App</h2>
+    </div>
+    <div class="mdl-layout__tab-bar mdl-js-ripple-effect mdl-color--primary-dark">
+        {% if active_route == 'home' %}
+            <a href="/" class="mdl-layout__tab is-active">Home</a>
+        {% else %}
+            <a href="/" class="mdl-layout__tab">Home</a>
+        {% endif %}
+
+        {% if active_route == 'about' %}
+            <a href="/about" class="mdl-layout__tab is-active">About</a>
+        {% else %}
+            <a href="/about" class="mdl-layout__tab">About</a>
+        {% endif %}
+
+        <div class="mdl-layout-spacer"></div>
+
+        {% if active_route == 'login' %}
+
+            <a href="/login"
+               class="mdl-layout__tab is-active mdl-button-effect mdl-js-button mdl-js-ripple-effect login-button">
+                <div class="flex-row-center">
+                    <span>Login </span>
+                    <i class="material-icons">person</i>
+                </div>
+            </a>
+        {% else %}
+            <a href="/login"
+               class="mdl-layout__tab mdl-button-effect mdl-js-button mdl-js-ripple-effect login-button">
+                <div class="flex-row-center">
+                    <span>Login </span>
+                    <i class="material-icons">person</i>
+                </div>
+            </a>
+        {% endif %}
+    </div>
+</header>
+<script>
+    function f(e) {
+        console.log(e)
+    }
+</script>

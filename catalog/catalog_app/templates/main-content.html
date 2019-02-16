@@ -1,0 +1,41 @@
+<div class="mdl-layout__tab-panel is-active" id="categories">
+    <section class="section--center mdl-grid mdl-grid--no-spacing">
+        <div class="mdl-cell mdl-cell--4-col mdl-cell--12-col-tablet">
+            <h4>Categories</h4>
+            <hr/>
+            <ul class="mdl-list mdl-list-custom">
+                {% for category in categories %}
+                <li class="mdl-list__item">
+                    <a href="{{url_for('show_category', category_id=category.id)}}">
+                                <span class="mdl-list__item-primary-content">
+                                    {{category.name}}
+                                </span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+
+
+        </div>
+        <div class="mdl-cell mdl-cell--2-col mdl-cell--0-col-tablet">
+        </div>
+        <div class="mdl-cell mdl-cell--6-col mdl-cell--12-col-tablet">
+            <h4 class="text-align-right">Items</h4>
+            <hr/>
+            <div class="text-align-right">
+                <ul class="mdl-list mdl-list-custom">
+                    {% for item in items %}
+                    <li class="mdl-list__item">
+                        <a href="{{url_for('show_item', item_id=item.id)}}"
+                           style="width: 100%">
+                                    <span class="mdl-list__item-primary-content">
+                                        {{item.name}}
+                                    </span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </section>
+</div>
