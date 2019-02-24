@@ -32,10 +32,7 @@ class User(Base):
     __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(250), nullable=False)
-    email = Column(String(250), nullable=False)
-    # password = Column(String(250), nullable=False)
-    # picture ?
+    email = Column(String(250), nullable=False, unique=True)
     date_created = Column(DateTime, default=_get_datetime, nullable=False)
 
     # We added this serialize function to be able to send JSON objects in a serializable format
@@ -43,7 +40,6 @@ class User(Base):
     def serialize(self):
         return {
             'id': self.id,
-            'name': self.name,
             'email': self.email,
             'date_created': self.date_created,
         }
@@ -70,11 +66,11 @@ class Item(Base):
             'name': self.name,
             'description': self.description,
             'date_created': self.date_created,
-            'category_id': self.category_id
-            # 'user': self.user
+            'category_id': self.category_id,
+            'user': self.user
         }
 
 
-engine = create_engine('postgresql://catalogadmin:root@localhost:5432/catalog')
+engine = create_engine('sqlite:///catalogapp.db', connect_args={'check_same_thread': False})
 
 Base.metadata.create_all(engine)

@@ -14,8 +14,6 @@
                 </li>
                 {% endfor %}
             </ul>
-
-
         </div>
         <div class="mdl-cell mdl-cell--2-col mdl-cell--0-col-tablet">
         </div>
@@ -26,7 +24,7 @@
                 <ul class="mdl-list mdl-list-custom">
                     {% for item in items %}
                     <li class="mdl-list__item">
-                        <a href="{{url_for('show_item', item_id=item.id)}}"
+                        <a href="{{url_for('show_item', item_id=item.id, category_id=item.category_id)}}"
                            style="width: 100%">
                                     <span class="mdl-list__item-primary-content">
                                         {{item.name}}

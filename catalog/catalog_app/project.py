@@ -1,15 +1,14 @@
 from flask import Flask, render_template, request, redirect, \
     jsonify, url_for, flash, session as login_session, make_response
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import sessionmaker, exc
 from database_setup import Base, Category, Item, User
 import random
 import string
 import json
 import httplib2
 import requests
-
-
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 
@@ -20,7 +19,7 @@ CLIENT_ID = json.loads(
 APPLICATION_NAME = "Catalog App"
 
 
-engine = create_engine('postgresql://catalogadmin:root@localhost:5432/catalog')
+engine = create_engine('sqlite:///catalogapp.db', connect_args={'check_same_thread': False})
 Base.metadata.bind = engine
 
 try:
@@ -42,7 +41,8 @@ def gconnect():
 
     try:
         # Upgrade the authorization code into a credentials object
-        oauth_flow = flow_from_clientsecrets('client_secret.json', scope='')
+        oauth_flow = flow_from_clientsecrets('client_secret.json',
+                                             scope=[''])
         oauth_flow.redirect_uri = 'postmessage'
         credentials = oauth_flow.step2_exchange(code)
     except FlowExchangeError:
@@ -53,6 +53,9 @@ def gconnect():
 
     # Check that the access token is valid.
     access_token = credentials.access_token
+
+    print('Current access_token: %s' % access_token)
+
     url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
            % access_token)
     h = httplib2.Http()
@@ -60,6 +63,8 @@ def gconnect():
 
     # If there was an error in the access token info, abort.
     if result.get('error') is not None:
+        print('ERRORRRR ##### !!!!!! ')
+        print(jsonify(result.get('error')))
         response = make_response(json.dumps(result.get('error')), 500)
         response.headers['Content-Type'] = 'application/json'
         return response
@@ -101,25 +106,35 @@ def gconnect():
 
     data = answer.json()
 
-    login_session['username'] = data['name']
+    if 'name' in data:
+        username = data['name']
+    else:
+        username = 'UNNAMED_USER'
+
+    login_session['username'] = username
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
 
-    output = ''
-    output += '<h1>Welcome, '
+    output = '<div class="welcome-div">'
+    output += '<h3>Welcome, '
     output += login_session['username']
-    output += '!</h1>'
+    output += '!</h3>'
     output += '<img src="'
     output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+    output += ' " style = "width: 150px; height: 150px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+    output += '</div>'
     flash("you are now logged in as %s" % login_session['username'])
     print("done!")
     return output
 
 
-@app.route('/logout')
-def logout():
-    return render_template('logout.html', active_route='')
+@app.route('/login')
+def login_page():
+    state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(32))
+    login_session['state'] = state
+    return render_template('login.html',
+                           active_route='login',
+                           login_session=login_session)
 
 
 @app.route('/gdisconnect')
@@ -138,7 +153,7 @@ def gdisconnect():
     result = h.request(url, 'GET')[0]
     print('result is ')
     print(result)
-    if result['status'] == '200':
+    if result['status'] == '200' :
         del login_session['access_token']
         del login_session['gplus_id']
         del login_session['username']
@@ -148,100 +163,174 @@ def gdisconnect():
         response.headers['Content-Type'] = 'application/json'
         return response
     else:
+        print(" debuggg #### \n")
+        print(login_session)
+        print(" debuggg #### 2 \n")
+
+
         response = make_response(json.dumps('Failed to revoke token for given user.', 400))
         response.headers['Content-Type'] = 'application/json'
         return response
 
 
+@app.route('/logout')
+def logout():
+    return render_template('logout.html', active_route='')
+
+
+@app.route('/something_bad')
+def something_bad():
+    return render_template('something_bad.html',
+                           active_route='',
+                           error="Something bad happened.",
+                           login_session=login_session)
+
+
+@app.route('/not_allowed')
+def not_allowed():
+    return render_template('something_bad.html',
+                           active_route='',
+                           error="Sorry, you're not allowed to do that.",
+                           login_session=login_session)
+
+
 @app.route('/')
 def home_page():
+    # try:
     categories = session.query(Category).order_by().all()
     items = session.query(Item).all()
     return render_template('content.html',
                            categories=categories,
                            items=items,
-                           active_route='home')
-
-
-@app.route('/login')
-def login_page():
-    state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(32))
-    login_session['state'] = state
-    return render_template('login.html', active_route='login', login_session=login_session)
+                           active_route='home',
+                           login_session=login_session)
+    # except (SQLAlchemyError, exc.NoResultFound):
+    #     flash('A connection error occurred...')
+    #     return redirect('/something_bad')
 
 
 @app.route('/category/<int:category_id>')
 def show_category(category_id):
+    # try:
     category = session.query(Category).filter_by(id=category_id).one()
-    return render_template('show_category.html', category=category, active_route='home')
+    items = session.query(Item).filter_by(category_id=category_id).all()
+    return render_template('show_category.html',
+                           category=category,
+                           items=items,
+                           active_route='',
+                           login_session=login_session)
+    # except (SQLAlchemyError, exc.NoResultFound):
+    #     flash('A connection error occurred...')
+    # return redirect('/something_bad')
 
 
 @app.route('/category/new', methods=['GET', 'POST'])
 def create_category():
-    if request.method == 'POST':
-        new_category = Category(name=request.form['name'])
-        session.add(new_category)
-        msg = "Category %s successfully created!" % new_category.name
-        print(msg)
-        session.commit()
-        return jsonify(msg=msg)
-    else:
-        render_template('new_category.html', active_route='home')
+    if 'username' not in login_session:
+        return redirect('/not_allowed')
+    try:
+        if request.method == 'POST':
+            new_category = Category(name=request.form['name'])
+            session.add(new_category)
+            msg = "Category %s successfully created!" % new_category.name
+            print(msg)
+            session.commit()
+            return jsonify(msg=msg)
+        else:
+            render_template('new_category.html', active_route='')
+    except (SQLAlchemyError, exc.NoResultFound):
+        flash('A connection error occurred...')
+        return redirect('/something_bad')
 
 
-@app.route('/category/json')
-def get_categories_json():
-    categories = session.query(Category).all()
-    return jsonify(categories=[c.serialize for c in categories])
-
-
-@app.route('/category/<int:category_id>/json')
-def get_category_json(category_id):
-    category_edit = session.query(Category).filter_by(id=category_id).one()
-    return jsonify(category=category_edit.serialize)
-
-
-@app.route('/category/<int:category_id>/item/new', methods=['POST'])
+@app.route('/category/<int:category_id>/item/new', methods=['POST', 'GET'])
 def create_item(category_id):
-    item = Item(name=request.form['name'],
-                description=request.form['description'],
-                category_id=category_id)
-    session.add(item)
-    session.commit()
-    msg = 'Item successfully created'
-    return jsonify(item=item.serialize, msg=msg)
+    if 'username' not in login_session:
+        return redirect('/not_allowed')
+
+    try:
+        category = session.query(Category).filter_by(id=category_id).one()
+        if category is not None:
+            if request.method == 'POST':
+                if request.form['name']:
+                    item = Item(name=request.form['name'],
+                                description=request.form['description'],
+                                category_id=category_id)
+                    session.add(item)
+                    session.commit()
+                    msg = 'Item successfully created'
+                    location = '/category/%s' % category.id
+                else:
+                    msg = 'Invalid form values!'
+                    location = '/category/%s/item/new' % category.id
+
+            else:
+                return render_template('create_item.html',
+                                       category=category)
+        else:
+            flash('Invalid category!')
+            return redirect('/something_bad')
+
+    except (SQLAlchemyError, exc.NoResultFound):
+        msg = 'A connection error occurred...'
+        location = '/something_bad'
+
+    flash(msg)
+    return redirect(location)
 
 
-@app.route('/item/<int:item_id>/edit', methods=['POST'])
 @app.route('/category/<int:category_id>/item/<int:item_id>/edit', methods=['POST'])
 def update_item(category_id=0, item_id=0):
-    if category_id:
+    if 'username' not in login_session:
+        return redirect('/not_allowed')
+
+    try:
         item = session.query(Item) \
             .filter_by(category_id=category_id) \
             .filter_by(id=item_id).one()
-    else:
-        item = session.query(Item) \
-            .filter_by(id=item_id).one()
 
-    if request.form['name'] and request.form['description']:
-        print('Item name %s' % item.name)
-        print('Item description %s' % item.description)
-        item.name = request.form['name']
-        item.description = request.form['description']
+        item_user = session.query(User).filter_by(id=item.user_id).one()
 
-    session.add(item)
-    session.commit()
-    flash('Item successfully edited!');
-    return redirect('/')
+        if login_session['email'] == item_user.email:
+            if request.form['name']:
+                item.name = request.form['name']
+                item.description = request.form['description']
+                session.add(item)
+                session.commit()
+                msg = 'Item successfully edited!'
+                location = '/category/%s' % item.category_id
+            else:
+                msg = 'Invalid form values!'
+                location = '/category/%s/item/new' % item.category_id
+        else:
+            msg = 'Only an owner of a item can edit it!'
+            location = '/not_allowed'
+
+    except (SQLAlchemyError, exc.NoResultFound):
+        msg = 'A connection error occurred...'
+        location = '/something_bad'
+
+    flash(msg)
+    return redirect(location)
 
 
-@app.route('/item/<int:item_id>')
-def show_item(item_id):
-    item = session.query(Item).filter_by(id=item_id).one()
-    return render_template('show_item.html', item=item, active_route='home', login_session=login_session)
+@app.route('/category/<int:category_id>/item/<int:item_id>')
+def show_item(item_id, category_id):
+    try:
+        item = session.query(Item)\
+            .filter_by(category_id=category_id)\
+            .filter_by(id=item_id)\
+            .one()
+
+        return render_template('show_item.html',
+                               item=item,
+                               active_route='home',
+                               login_session=login_session)
+    except (SQLAlchemyError, exc.NoResultFound):
+        flash('A connection error occurred...')
+        return redirect('/something_bad')
 
 
-@app.route('/item/<int:item_id>/delete', methods=['POST'])
 @app.route('/category/<int:category_id>/item/<int:item_id>/delete', methods=['POST'])
 def delete_item(category_id=0, item_id=0):
 
@@ -254,28 +343,23 @@ def delete_item(category_id=0, item_id=0):
             item = session.query(Item) \
                 .filter_by(id=item_id).one()
 
-        # If user is the item creator: delete
-        # Else: not allowed
+        item_user = session.query(User).filter_by(id=item.user_id).one()
+        if login_session['email'] == item_user.email:
+            session.delete(item)
+            session.commit()
+            msg = 'Item successfully edited!'
+            location = '/category/%s' % item.category_id
 
-        session.delete(item)
-        session.commit()
-        flash('Item successfully deleted!');
+        else:
+            msg = 'Only an owner of a item can delete it!'
+            location = '/not_allowed'
 
-    return redirect('/')
+    else:
+        msg = 'Only logged in users can delete items!'
+        location = '/not_allowed'
 
-
-@app.route('/category/<int:category_id>/item/json')
-def get_category_items_json(category_id):
-    items = session.query(Item).filter_by(category_id=category_id).all()
-    return jsonify(items=[i.serialize for i in items])
-
-
-@app.route('/category/<int:category_id>/item/<int:item_id>/json')
-def get_category_item_json(category_id, item_id):
-    item = session.query(Item)\
-            .filter_by(category_id=category_id)\
-            .filter_by(id=item_id).one()
-    return jsonify(item=item.serialize)
+    flash(msg)
+    return redirect(location)
 
 
 if __name__ == '__main__':

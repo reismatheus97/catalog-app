@@ -4,26 +4,7 @@
 <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
     {% include "header.html" %}
     <main class="mdl-layout__content">
-        <div class = 'flash'>
-            {% with messages = get_flashed_messages() %}
-            {% if messages %}
-
-
-            <ul>
-                {% for message in messages %}
-                <li> <strong> {{ message }} </strong> </li>
-                {% endfor %}
-            </ul>
-
-            <script>
-                setTimeout( () => {
-                    document.querySelector('.flash').className = 'display-none';
-                }, 3000);
-            </script>
-            {% endif %}
-            {% endwith %}
-
-        </div>
+        {% include "flash-messages.html"%}
         {% include "main-content.html" %}
         {% include "about.html" %}
         {% include "footer.html" %}

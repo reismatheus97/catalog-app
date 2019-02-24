@@ -14,9 +14,8 @@
                     {{item.description}}
                 </div>
                 {% if login_session['username'] %}
-                <h3>{{login_session['username']}}</h3>
                 <div id="form-container">
-                    <form id="item-form" action="/item/{{item.id}}/delete" method="post">
+                    <form id="item-form" action="/category/{{item.category_id}}/item/{{item.id}}/delete" method="post">
                         <div class="mdl-card__actions mdl-card--border">
                             <button class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect"
                                     onclick="handleEdit(event)">
@@ -126,7 +125,7 @@
         `;
 
         formContainerDOM.innerHTML = `
-            <form id="item-form" action="/item/{{item.id}}/edit" method="post">
+            <form id="item-form" action="/category/{{item.category_id}}/item/{{item.id}}/edit" method="post">
                 <div class="mdl-card__actions mdl-card--border">
                     <button
                         class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect"

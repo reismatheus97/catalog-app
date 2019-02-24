@@ -6,40 +6,42 @@
     <main class="mdl-layout__content">
         <div class="wrapper">
             {% if login_session['username'] %}
+            <h5>
                 You are logged in as: {{login_session['username']}}
-
-                <button onclick="gLogout()">
-                    Log out
-                </button>
-                <script>
-                    function gLogout() {
-                        $.ajax({
-                            type: 'GET',
-                            url: "/gdisconnect",
-                            processData: false,
-                            contentType: 'application/octet-stream; charset=utf-8',
-                            success: function(result) {
+            </h5>
+            <button id="btn-logout"
+                    class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button-effect"
+                    onclick="gLogout()">
+                Click to Log out
+            </button>
+            <script>
+                function gLogout() {
+                    $.ajax({
+                        type: 'GET',
+                        url: "/gdisconnect",
+                        processData: false,
+                        contentType: 'application/octet-stream; charset=utf-8',
+                        success: function(result) {
                             // Handle or verify the server response if necessary.
-                                if (result) {
-                                    window.location.href = "/logout"
-                                } else {
-                                    alert('Failed to make a server-side call. Check your configuration and console.');
-                                }
+                            if (result) {
+                                window.location.href = "/logout"
+                            } else {
+                                alert('Failed to make a server-side call. Check your configuration and console.');
                             }
+                        }
 
-                        });
-                    }
-                </script>
+                    });
+                }
+            </script>
 
             {% else %}
-            <button >
-                Log out
-            </button>
-            <h4> Log in with Google. </h4>
+            <div id="result">
+                <h5> Log in with Google. </h5>
+            </div>
             <div id="signinButton">
                 <span class="g-signin"
                       data-scope="openid email"
-                      data-clientid="1022032515578-9848s50jirqoji24n6t9rppp0m3rp4d6.apps.googleusercontent.com"
+                      data-clientid="790770323085-ovckvjs66tssc2s7leq3t466o5a87iko.apps.googleusercontent.com"
                       data-redirecturi="postmessage"
                       data-accesstype="offline"
                       data-cookiepolicy="single_host_origin"
@@ -47,7 +49,6 @@
                       data-approvalprompt="force">
                 </span>
             </div>
-            <div id="result"></div>
             <script>
                 function signInCallback(authResult) {
                     if (authResult['code']) {
@@ -61,16 +62,17 @@
                             data: authResult['code'],
                             contentType: 'application/octet-stream; charset=utf-8',
                             success: function(result) {
-                            // Handle or verify the server response if necessary.
+                                // Handle or verify the server response if necessary.
                                 if (result) {
-                                    $('#result').html('Login Successful!</br>'+ result);
+                                    $('#result').html();
+                                    $('#result').html(result);
                                     $('a.login-button').replaceWith(`
-                                        <a href="/logout"
+                                        <a href="/login"
                                         class="mdl-layout__tab is-active mdl-button-effect mdl-js-button mdl-js-ripple-effect login-button">
-                                        <div class="flex-row-center">
-                                        <span>Logout </span>
-                                        <i class="material-icons">person</i>
-                                        </div>
+                                            <div class="flex-row-center">
+                                            <span>Logout </span>
+                                            <i class="material-icons">person</i>
+                                            </div>
                                         </a>
                                     `)
 

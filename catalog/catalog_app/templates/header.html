@@ -19,12 +19,18 @@
 
         <div class="mdl-layout-spacer"></div>
 
+        {% if 'username' in login_session %}
+            {% set loginButtonLabel = "Logout" %}
+        {% else %}
+            {% set loginButtonLabel = "Login" %}
+        {% endif %}
+
         {% if active_route == 'login' %}
 
             <a href="/login"
                class="mdl-layout__tab is-active mdl-button-effect mdl-js-button mdl-js-ripple-effect login-button">
                 <div class="flex-row-center">
-                    <span>Login </span>
+                    <span>{{loginButtonLabel}} </span>
                     <i class="material-icons">person</i>
                 </div>
             </a>
@@ -32,7 +38,7 @@
             <a href="/login"
                class="mdl-layout__tab mdl-button-effect mdl-js-button mdl-js-ripple-effect login-button">
                 <div class="flex-row-center">
-                    <span>Login </span>
+                    <span>{{loginButtonLabel}} </span>
                     <i class="material-icons">person</i>
                 </div>
             </a>
