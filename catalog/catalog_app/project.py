@@ -1,9 +1,9 @@
 from flask import Flask, render_template, request, redirect, \
-    jsonify, url_for, flash, session as login_session, make_response
+    jsonify, flash, session as login_session, make_response
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, exc
-from database_setup import Base, Category, Item, User
+from database_setup import Base, Category, Item
 import random
 import string
 import json
@@ -19,12 +19,28 @@ CLIENT_ID = json.loads(
 APPLICATION_NAME = "Catalog App"
 
 
-engine = create_engine('sqlite:///catalogapp.db', connect_args={'check_same_thread': False})
+engine = create_engine('sqlite:///catalogapp.db',
+                       connect_args={'check_same_thread': False})
 Base.metadata.bind = engine
 
 try:
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
+
+    # Creates some category
+
+    has_data = session.query(Category).all()
+    if not has_data:
+        raw_categories = [
+            Category(name='Clothes'),
+            Category(name='Games'),
+            Category(name='Movies'),
+            Category(name='Games'),
+        ]
+        session.bulk_save_objects(raw_categories)
+        session.commit()
+        print("Some categories are here!")
+
 except ConnectionError as e:
     print("Unable to connect to database: %s" % e)
 
@@ -41,9 +57,11 @@ def gconnect():
 
     try:
         # Upgrade the authorization code into a credentials object
-        oauth_flow = flow_from_clientsecrets('client_secret.json',
-                                             scope=[''])
-        oauth_flow.redirect_uri = 'postmessage'
+        oauth_flow = flow_from_clientsecrets(
+            'client_secret.json',
+            scope=['https://www.googleapis.com/auth/userinfo.profile']
+        )
+        oauth_flow.redirect_uri = 'http://localhost:5000'
         credentials = oauth_flow.step2_exchange(code)
     except FlowExchangeError:
         response = make_response(
@@ -54,8 +72,6 @@ def gconnect():
     # Check that the access token is valid.
     access_token = credentials.access_token
 
-    print('Current access_token: %s' % access_token)
-
     url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
            % access_token)
     h = httplib2.Http()
@@ -63,8 +79,6 @@ def gconnect():
 
     # If there was an error in the access token info, abort.
     if result.get('error') is not None:
-        print('ERRORRRR ##### !!!!!! ')
-        print(jsonify(result.get('error')))
         response = make_response(json.dumps(result.get('error')), 500)
         response.headers['Content-Type'] = 'application/json'
         return response
@@ -87,11 +101,16 @@ def gconnect():
         response.headers['Content-Type'] = 'application/json'
         return response
 
-    stored_access_token = login_session.get('access_token')
-    stored_gplus_id = login_session.get('gplus_id')
-    if stored_access_token is not None and gplus_id == stored_gplus_id:
-        response = make_response(json.dumps('Current user is already connected.'),
-                                 200)
+    stored_access_token = \
+        login_session.get('access_token')
+    stored_gplus_id = \
+        login_session.get('gplus_id')
+
+    if stored_access_token is not None and \
+            gplus_id == stored_gplus_id:
+        response = make_response(json.dumps(
+            'Current user is already connected.'
+        ), 200)
         response.headers['Content-Type'] = 'application/json'
         return response
 
@@ -121,16 +140,21 @@ def gconnect():
     output += '!</h3>'
     output += '<img src="'
     output += login_session['picture']
-    output += ' " style = "width: 150px; height: 150px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+    output += '" style = "width: 150px; height: 150px;' \
+              'border-radius: 150px;-webkit-border-radius: 150px;' \
+              '-moz-border-radius: 150px;"> '
     output += '</div>'
-    flash("you are now logged in as %s" % login_session['username'])
-    print("done!")
+    flash("You are now logged in as %s" % login_session['username'])
+
     return output
 
 
 @app.route('/login')
 def login_page():
-    state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(32))
+    state = ''.join(random.choice(
+        string.ascii_uppercase + string.digits
+    ) for x in range(32))
+
     login_session['state'] = state
     return render_template('login.html',
                            active_route='login',
@@ -142,33 +166,37 @@ def gdisconnect():
     access_token = login_session.get('access_token')
     if access_token is None:
         print('Access Token is None')
-        response = make_response(json.dumps('Current user not connected.'), 401)
+        response = make_response(
+            json.dumps('Current user not connected.'), 401
+        )
         response.headers['Content-Type'] = 'application/json'
         return response
-    print('In gdisconnect access token is %s', access_token)
-    print('User name is: ')
-    print(login_session['username'])
-    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % login_session['access_token']
+
+    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' \
+          % login_session['access_token']
+
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
-    print('result is ')
-    print(result)
-    if result['status'] == '200' :
+
+    if result['status'] == '200':
         del login_session['access_token']
         del login_session['gplus_id']
         del login_session['username']
         del login_session['email']
         del login_session['picture']
-        response = make_response(json.dumps('Successfully disconnected.'), 200)
+        response = make_response(
+            json.dumps(
+                'Successfully disconnected.'
+            ), 200)
         response.headers['Content-Type'] = 'application/json'
         return response
     else:
-        print(" debuggg #### \n")
-        print(login_session)
-        print(" debuggg #### 2 \n")
+        response = make_response(
+            json.dumps(
+                'Failed to revoke token for given user.',
+                400)
+        )
 
-
-        response = make_response(json.dumps('Failed to revoke token for given user.', 400))
         response.headers['Content-Type'] = 'application/json'
         return response
 
@@ -196,51 +224,51 @@ def not_allowed():
 
 @app.route('/')
 def home_page():
-    # try:
-    categories = session.query(Category).order_by().all()
-    items = session.query(Item).all()
-    return render_template('content.html',
-                           categories=categories,
-                           items=items,
-                           active_route='home',
-                           login_session=login_session)
-    # except (SQLAlchemyError, exc.NoResultFound):
-    #     flash('A connection error occurred...')
-    #     return redirect('/something_bad')
+    try:
+        categories = session.query(Category).order_by().all()
+        items = session.query(Item).all()
+        return render_template('content.html',
+                               categories=categories,
+                               items=items,
+                               active_route='home',
+                               login_session=login_session)
+    except Exception as e:
+        print("#### "
+              "Exception : %s"
+              "$$$$" % e)
+        flash('A connection error occurred...')
+        return redirect('/something_bad')
 
 
 @app.route('/category/<int:category_id>')
 def show_category(category_id):
-    # try:
-    category = session.query(Category).filter_by(id=category_id).one()
-    items = session.query(Item).filter_by(category_id=category_id).all()
-    return render_template('show_category.html',
-                           category=category,
-                           items=items,
-                           active_route='',
-                           login_session=login_session)
-    # except (SQLAlchemyError, exc.NoResultFound):
-    #     flash('A connection error occurred...')
-    # return redirect('/something_bad')
+    try:
+        category = session.query(Category).filter_by(id=category_id).one()
+        items = session.query(Item).filter_by(category_id=category_id).all()
+        return render_template('show_category.html',
+                               category=category,
+                               items=items,
+                               active_route='',
+                               login_session=login_session)
+    except (SQLAlchemyError, exc.NoResultFound):
+        flash('A connection error occurred...')
+    return redirect('/something_bad')
 
 
-@app.route('/category/new', methods=['GET', 'POST'])
+@app.route('/category/new', methods=['POST'])
 def create_category():
     if 'username' not in login_session:
         return redirect('/not_allowed')
     try:
-        if request.method == 'POST':
-            new_category = Category(name=request.form['name'])
-            session.add(new_category)
-            msg = "Category %s successfully created!" % new_category.name
-            print(msg)
-            session.commit()
-            return jsonify(msg=msg)
-        else:
-            render_template('new_category.html', active_route='')
+        new_category = Category(name=request.form['name'])
+        session.add(new_category)
+        session.commit()
+        msg = "Category %s successfully created!" % new_category.name
+
     except (SQLAlchemyError, exc.NoResultFound):
-        flash('A connection error occurred...')
-        return redirect('/something_bad')
+        msg = "An error occurred..."
+
+    return jsonify(msg)
 
 
 @app.route('/category/<int:category_id>/item/new', methods=['POST', 'GET'])
@@ -255,7 +283,8 @@ def create_item(category_id):
                 if request.form['name']:
                     item = Item(name=request.form['name'],
                                 description=request.form['description'],
-                                category_id=category_id)
+                                category_id=category_id,
+                                owner_mail=login_session['email'])
                     session.add(item)
                     session.commit()
                     msg = 'Item successfully created'
@@ -279,7 +308,8 @@ def create_item(category_id):
     return redirect(location)
 
 
-@app.route('/category/<int:category_id>/item/<int:item_id>/edit', methods=['POST'])
+@app.route('/category/<int:category_id>/item/<int:item_id>/edit',
+           methods=['POST'])
 def update_item(category_id=0, item_id=0):
     if 'username' not in login_session:
         return redirect('/not_allowed')
@@ -289,9 +319,7 @@ def update_item(category_id=0, item_id=0):
             .filter_by(category_id=category_id) \
             .filter_by(id=item_id).one()
 
-        item_user = session.query(User).filter_by(id=item.user_id).one()
-
-        if login_session['email'] == item_user.email:
+        if login_session['email'] == item.owner_mail:
             if request.form['name']:
                 item.name = request.form['name']
                 item.description = request.form['description']
@@ -331,25 +359,20 @@ def show_item(item_id, category_id):
         return redirect('/something_bad')
 
 
-@app.route('/category/<int:category_id>/item/<int:item_id>/delete', methods=['POST'])
-def delete_item(category_id=0, item_id=0):
+@app.route('/category/<int:category_id>/item/<int:item_id>/delete',
+           methods=['POST'])
+def delete_item(category_id, item_id):
 
-    if login_session['username']:
-        if category_id:
-            item = session.query(Item) \
-                .filter_by(category_id=category_id) \
-                .filter_by(id=item_id).one()
-        else:
-            item = session.query(Item) \
-                .filter_by(id=item_id).one()
+    if login_session['email']:
+        item = session.query(Item) \
+            .filter_by(category_id=category_id) \
+            .filter_by(id=item_id).one()
 
-        item_user = session.query(User).filter_by(id=item.user_id).one()
-        if login_session['email'] == item_user.email:
+        if login_session['email'] == item.owner_mail:
             session.delete(item)
             session.commit()
-            msg = 'Item successfully edited!'
+            msg = 'Item successfully deleted!'
             location = '/category/%s' % item.category_id
-
         else:
             msg = 'Only an owner of a item can delete it!'
             location = '/not_allowed'
