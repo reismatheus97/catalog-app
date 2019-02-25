@@ -311,6 +311,12 @@ def create_item(category_id):
 @app.route('/category/<int:category_id>/item/<int:item_id>/edit',
            methods=['POST'])
 def update_item(category_id=0, item_id=0):
+    """
+    This method let an user logged-in but create the item
+    to submit the form and get a "not allowed" response to
+    illustrate the bounds built by the authorization module.
+    """
+
     if 'username' not in login_session:
         return redirect('/not_allowed')
 
@@ -345,9 +351,9 @@ def update_item(category_id=0, item_id=0):
 @app.route('/category/<int:category_id>/item/<int:item_id>')
 def show_item(item_id, category_id):
     try:
-        item = session.query(Item)\
-            .filter_by(category_id=category_id)\
-            .filter_by(id=item_id)\
+        item = session.query(Item) \
+            .filter_by(category_id=category_id) \
+            .filter_by(id=item_id) \
             .one()
 
         return render_template('show_item.html',
@@ -362,7 +368,11 @@ def show_item(item_id, category_id):
 @app.route('/category/<int:category_id>/item/<int:item_id>/delete',
            methods=['POST'])
 def delete_item(category_id, item_id):
-
+    """
+    This method let an user logged-in but create the item
+    to submit the form and get a "not allowed" response to
+    illustrate the bounds built by the authorization module.
+    """
     if login_session['email']:
         item = session.query(Item) \
             .filter_by(category_id=category_id) \
