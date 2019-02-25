@@ -25,6 +25,9 @@
 
                     <hr/>
                     <ul class="mdl-list mdl-list-custom">
+                        {% if 'username' not in login_session %}
+                        <h5>Login to start creating items!</h5>
+                        {% endif %}
                         {% for item in items %}
                         <li class="mdl-list__item">
                             <a href="{{url_for('show_item', item_id=item.id, category_id=category.id)}}"
