@@ -1,0 +1,48 @@
+{% extends "index.html" %}
+{% block content %}
+
+<div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+    {% include "header.html" %}
+    <main class="mdl-layout__content">
+        {% include "flash-messages.html"%}
+        <div class="wrapper">
+            <h4>Create new item</h4>
+            <form action="/category/{{category.id}}/item/new" method="post">
+                <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label display-block">
+                    <input id="item-name"
+                           class="mdl-textfield__input"
+                           type="text"
+                           name="name">
+                    <label class="mdl-textfield__label" for="item-name">Name</label>
+                </div>
+                <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label display-block">
+                    <input id="item-desc"
+                           class="mdl-textfield__input"
+                           type="text"
+                           name="description">
+                    <label class="mdl-textfield__label" for="item-desc">Description</label>
+                </div>
+                <input type="hidden" value="{{category.id}}" name="category_id">
+                <div class="flex-between create-form-btns">
+                    <button class="mdl-button mdl-js-button mdl-button--fab mdl-button--colored"
+                            type="submit">
+                        <i class="material-icons">save_alt</i>
+                    </button>
+                    <button class="mdl-button mdl-js-button mdl-button--fab mdl-button--colored"
+                            onclick="closeFunc(event)">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% include "footer.html" %}
+    </main>
+</div>
+<script>
+    closeFunc = (e) => {
+        e.preventDefault();
+        location.href = '/category/{{category.id}}';
+    }
+</script>
+<script src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+{% endblock %}
