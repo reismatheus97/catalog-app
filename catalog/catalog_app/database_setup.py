@@ -28,23 +28,6 @@ class Category(Base):
         }
 
 
-class User(Base):
-    __tablename__ = 'user'
-
-    id = Column(Integer, primary_key=True)
-    email = Column(String(250), nullable=False, unique=True)
-    date_created = Column(DateTime, default=_get_datetime, nullable=False)
-
-    # We added this serialize function to be able to send JSON objects in a serializable format
-    @property
-    def serialize(self):
-        return {
-            'id': self.id,
-            'email': self.email,
-            'date_created': self.date_created,
-        }
-
-
 class Item(Base):
     __tablename__ = 'item'
 
@@ -52,11 +35,9 @@ class Item(Base):
     name = Column(String(80), nullable=False)
     description = Column(String(250), nullable=False)
     date_created = Column(DateTime, default=_get_datetime, nullable=False)
-
+    owner_mail = Column(String(250), nullable=False)
     category_id = Column(Integer, ForeignKey('category.id'), nullable=False)
-    user_id = Column(Integer, ForeignKey('user.id'))
     category = relationship(Category)
-    user = relationship(User)
 
     # We added this serialize function to be able to send JSON objects in a serializable format
     @property
@@ -67,7 +48,7 @@ class Item(Base):
             'description': self.description,
             'date_created': self.date_created,
             'category_id': self.category_id,
-            'user': self.user
+            'owner_email': self.owner_mail
         }
 
 
