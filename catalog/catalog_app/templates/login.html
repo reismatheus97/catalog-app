@@ -39,16 +39,17 @@
                 <h5> Log in with Google. </h5>
             </div>
             <div id="signinButton">
-                <span class="g-signin"
-                      data-scope="openid email"
-                      data-clientid="790770323085-ovckvjs66tssc2s7leq3t466o5a87iko.apps.googleusercontent.com"
-                      data-redirecturi="postmessage"
-                      data-accesstype="offline"
-                      data-cookiepolicy="single_host_origin"
-                      data-callback="signInCallback"
-                      data-approvalprompt="force">
-                </span>
-            </div>
+                    <span class="g-signin"
+                          data-scope="openid email"
+                          data-clientid="790770323085-pb1vs6fpqmafv08ho6trovqb8mkrte5l.apps.googleusercontent.com"
+                          data-redirecturi="http://localhost:5000"
+                          data-accesstype="offline"
+                          data-cookiepolicy="single_host_origin"
+                          data-callback="signInCallback"
+                          data-approvalprompt="force">
+                    </span>
+                </div>
+
             <script>
                 function signInCallback(authResult) {
                     if (authResult['code']) {
@@ -75,7 +76,6 @@
                                             </div>
                                         </a>
                                     `)
-
                                 } else if (authResult['error']) {
                                     console.log('There was an error: ' + authResult['error']);
                                 } else {
@@ -91,11 +91,5 @@
         {% include "footer.html" %}
     </main>
 </div>
-<script>
-    // function f(e, id) {
-    //     console.log(e);
-    //     console.log(id);
-    // }
-</script>
 <script src="https://code.getmdl.io/1.3.0/material.min.js"></script>
 {% endblock %}
