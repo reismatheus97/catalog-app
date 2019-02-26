@@ -48,7 +48,7 @@ obs: A `catalogapp.db` file will hold the entire data from the application.
 ```vagrant ssh```
 
 5- Inside the VM SSH connection created, go to:  \
-```cd / & cd /vagrant/catalog/catalog_app```
+```cd / & cd /vagrant/catalog```
 
 6- Run database setup: \
 ```python database_setup.py```
