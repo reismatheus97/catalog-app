@@ -14,6 +14,14 @@ It explores some concepts about:
 - Using an ORM: [SQLAlchemy](https://www.sqlalchemy.org/)
 - Authentication and authorization
 - Implementation of [OAuth2 using Google APIs in Python](https://developers.google.com/api-client-library/python/auth/web-app)
+- Exception and error handling with custom views and messages  
+(with app running, try: localhost:5000/not_allowed or localhost:5000/something_bad)
+
+* To illustrate some error handling, some funcionalities were defined as:
+  - When editing an item, an user can see the button and submit the form about editing operation. But if the user is not the item owner then will be redirected to a "not allowed" page and receives a message telling what happened.
+  - When deleting an item, the same as described above gonna happen.  
+Sneaky operations like log off and go back to the previous page won't be supported since the user is not authenticated, redirecting the user to the appropriated page.
+  - Sneaky operations like log off and go back to the previous page won't be supported since the user is not authenticated, redirecting the user to the appropriated page.
 
 # Requirements
 The project will run inside a virtual machine provided by [VirtualBox](https://www.virtualbox.org/) and managed by [Vagrant](https://www.vagrantup.com/)
