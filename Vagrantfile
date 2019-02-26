@@ -23,7 +23,7 @@ Vagrant.configure("2") do |config|
     # apt-get -qqy upgrade
     DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
 
-    apt-get -qqy install make zip unzip sqlite3
+    apt-get -qqy install make zip unzip
 
     apt-get -qqy install python3 python3-pip 
     pip3 install --upgrade pip

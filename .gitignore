@@ -1,5 +1,5 @@
 __pycache__
 *.pyc
 .vagrant
-/catalog/catalog_app/*.idea
-/catalog/catalog_app/*.db
+/catalog/*.idea
+/catalog/*.db

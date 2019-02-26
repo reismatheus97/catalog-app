@@ -393,3 +393,8 @@ textarea.mdl-textfield__input {
 .create-form-btns {
   margin: 10px 5px;
 }
+
+.display-inline {
+  display: inline;
+}
+

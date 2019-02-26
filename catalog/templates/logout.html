@@ -4,10 +4,11 @@
 <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
     {% include "header.html" %}
     <main class="mdl-layout__content">
-        {% include "flash-messages.html"%}
-        {% include "main-content.html" %}
-        {% include "footer.html" %}
+        <div class="wrapper">
+            <h3> You logged out! </h3>
+        </div>
     </main>
+    {% include "footer.html" %}
 </div>
 <script src="https://code.getmdl.io/1.3.0/material.min.js"></script>
 {% endblock %}
