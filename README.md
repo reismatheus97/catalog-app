@@ -5,11 +5,12 @@ This isn't a commercial project and has only academic purposes.
 # About
 This is an web application that provides a list of items within a variety of categories as well as provides an user authentication system.  Authenticated users will have the ability to post, edit and delete their own items.
 
-The solution was written using **Python** and **SQLite**.  
+The solution was written using **Python** and **SQLite**. The **Material Design Lite** component library was used to develop graphical interface.
 It explores some concepts about:
 - Connections between an application and a database server
 - Use of imports and native modules of Python
 - Implementation of RESTful architecture
+- UI elements provided by **MDL** and UX improved.
 - Developing with frameworks: [Flask](http://flask.pocoo.org/)
 - Using an ORM: [SQLAlchemy](https://www.sqlalchemy.org/)
 - Authentication and authorization
@@ -31,6 +32,7 @@ With the VM built with this file and running up, we are ready to go.
 
 The [Python](https://www.python.org/) language can be used with versions 2 and 3.  
 The [SQLite](https://www.sqlite.org/index.html) database comes natively with Python since its version 2.5.  
+The [Material Design Lite](https://getmdl.io) component library its used in v2.
 
 obs: A `catalogapp.db` file will hold the entire data from the application.
 
