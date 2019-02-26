@@ -398,3 +398,7 @@ textarea.mdl-textfield__input {
   display: inline;
 }
 
+.my-article {
+  width: 500px;
+}
+

@@ -254,6 +254,13 @@ def not_allowed():
                            login_session=login_session)
 
 
+@app.route('/about')
+def about():
+    return render_template('about.html',
+                           active_route='about',
+                           login_session=login_session)
+
+
 @app.route('/')
 def home_page():
     try:
