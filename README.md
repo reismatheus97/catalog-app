@@ -14,6 +14,8 @@ It explores some concepts about:
 - Using an ORM: [SQLAlchemy](https://www.sqlalchemy.org/)
 - Authentication and authorization
 - Implementation of [OAuth2 using Google APIs in Python](https://developers.google.com/api-client-library/python/auth/web-app)
+- Exception and error handling with custom views and messages  
+(with app running, try: localhost:5000/not_allowed or localhost:5000/something_bad)
 
 # Requirements
 The project will run inside a virtual machine provided by [VirtualBox](https://www.virtualbox.org/) and managed by [Vagrant](https://www.vagrantup.com/)
