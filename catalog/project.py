@@ -39,7 +39,7 @@ try:
                      description='A realy cool shirt.',
                      owner_mail='reismatheus97@gmail.com')
 
-        c1 = Category(name='Clothes', items=[item1,item2])
+        c1 = Category(name='Clothes', items=[item1, item2])
         session.add(c1)
 
         item3 = Item(name='Star Wars Battlefront II',
@@ -226,8 +226,11 @@ def gdisconnect():
 
 @app.route('/catalog_app/JSON')
 def catalog_app_json():
-    all_categories = session.query(Category).options(lazyload(Category.items)).all()
-    return jsonify(Catalog=[i.serialize_with_relations for i in all_categories])
+    all_categories = session.query(Category)\
+                        .options(lazyload(Category.items)).all()
+    return jsonify(
+        Catalog=[i.serialize_with_relations for i in all_categories]
+    )
 
 
 @app.route('/logout')

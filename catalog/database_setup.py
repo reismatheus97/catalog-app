@@ -19,7 +19,8 @@ class Category(Base):
     date_created = Column(DateTime, default=_get_datetime, nullable=False)
     items = relationship("Item", back_populates='category')
 
-    # We added this serialize function to be able to send JSON objects in a serializable format
+    # We added these serialize functions to be able
+    # to send JSON objects in a serializable format
     @property
     def serialize(self):
         return {
@@ -53,7 +54,8 @@ class Item(Base):
     category_id = Column(Integer, ForeignKey('category.id'), nullable=False)
     category = relationship("Category", back_populates="items")
 
-    # We added this serialize function to be able to send JSON objects in a serializable format
+    # We added these serialize functions to be able
+    # to send JSON objects in a serializable format
     @property
     def serialize(self):
         return {
@@ -76,6 +78,7 @@ class Item(Base):
         }
 
 
-engine = create_engine('sqlite:///catalogapp.db', connect_args={'check_same_thread': False})
+engine = create_engine('sqlite:///catalogapp.db',
+                       connect_args={'check_same_thread': False})
 
 Base.metadata.create_all(engine)
