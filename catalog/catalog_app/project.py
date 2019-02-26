@@ -1,12 +1,12 @@
 from flask import Flask, render_template, request, redirect, \
     jsonify, flash, session as login_session, make_response
 from sqlalchemy import create_engine
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import sessionmaker, exc
+from sqlalchemy.orm import sessionmaker, lazyload
 from database_setup import Base, Category, Item
 import random
 import string
 import json
+from datetime import datetime, timedelta
 import httplib2
 import requests
 from oauth2client.client import flow_from_clientsecrets
@@ -27,22 +27,45 @@ try:
     DBSession = sessionmaker(bind=engine)
     session = DBSession()
 
-    # Creates some category
-
+    # Create some data
     has_data = session.query(Category).all()
     if not has_data:
-        raw_categories = [
-            Category(name='Clothes'),
-            Category(name='Games'),
-            Category(name='Movies'),
-            Category(name='Games'),
-        ]
-        session.bulk_save_objects(raw_categories)
-        session.commit()
-        print("Some categories are here!")
+        print("Creating some data...")
 
-except ConnectionError as e:
-    print("Unable to connect to database: %s" % e)
+        item1 = Item(name='Cool Shirt',
+                     description='Just a cool shirt.',
+                     owner_mail='reismatheus97@gmail.com')
+        item2 = Item(name='Really Cool Shirt',
+                     description='A realy cool shirt.',
+                     owner_mail='reismatheus97@gmail.com')
+
+        c1 = Category(name='Clothes', items=[item1,item2])
+        session.add(c1)
+
+        item3 = Item(name='Star Wars Battlefront II',
+                     description='An epic game from the Star Wars saga.',
+                     owner_mail='reismatheus97@gmail.com')
+        item4 = Item(name='FIFA 19',
+                     description='Play with the bests!',
+                     owner_mail='reismatheus97@gmail.com')
+        c2 = Category(name='Games',
+                      date_created=datetime.now()+timedelta(seconds=60),
+                      items=[item3, item4])
+        session.add(c2)
+
+        item5 = Item(name='Star Wars III',
+                     description='The best movie on the Star Wars saga.',
+                     owner_mail='reismatheus97@gmail.com')
+        c3 = Category(name='Movies',
+                      date_created=datetime.now()-timedelta(seconds=60),
+                      items=[item5])
+        session.add(c3)
+
+        session.commit()
+        print("... some data are here!")
+
+except Exception as excp:
+    print("Unable to connect to database: %s" % excp)
 
 
 @app.route('/gconnect', methods=['POST'])
@@ -201,6 +224,12 @@ def gdisconnect():
         return response
 
 
+@app.route('/catalog_app/JSON')
+def catalog_app_json():
+    all_categories = session.query(Category).options(lazyload(Category.items)).all()
+    return jsonify(Catalog=[i.serialize_with_relations for i in all_categories])
+
+
 @app.route('/logout')
 def logout():
     return render_template('logout.html', active_route='')
@@ -233,10 +262,8 @@ def home_page():
                                active_route='home',
                                login_session=login_session)
     except Exception as e:
-        print("#### "
-              "Exception : %s"
-              "$$$$" % e)
-        flash('A connection error occurred...')
+        flash('An error occurred...')
+        print("Exception: %s" % e)
         return redirect('/something_bad')
 
 
@@ -250,8 +277,9 @@ def show_category(category_id):
                                items=items,
                                active_route='',
                                login_session=login_session)
-    except (SQLAlchemyError, exc.NoResultFound):
-        flash('A connection error occurred...')
+    except Exception as e:
+        print("Exception: %s" % e)
+        flash('An error occurred...')
     return redirect('/something_bad')
 
 
@@ -265,7 +293,8 @@ def create_category():
         session.commit()
         msg = "Category %s successfully created!" % new_category.name
 
-    except (SQLAlchemyError, exc.NoResultFound):
+    except Exception as e:
+        print("Exception: %s" % e)
         msg = "An error occurred..."
 
     return jsonify(msg)
@@ -300,8 +329,9 @@ def create_item(category_id):
             flash('Invalid category!')
             return redirect('/something_bad')
 
-    except (SQLAlchemyError, exc.NoResultFound):
-        msg = 'A connection error occurred...'
+    except Exception as e:
+        print("Exception: %s" % e)
+        msg = 'An error occurred...'
         location = '/something_bad'
 
     flash(msg)
@@ -312,9 +342,11 @@ def create_item(category_id):
            methods=['POST'])
 def update_item(category_id=0, item_id=0):
     """
-    This method let an user logged-in but create the item
-    to submit the form and get a "not allowed" response to
-    illustrate the bounds built by the authorization module.
+    This method lets an user logged-in
+    but not the owner of item to submit
+    the form and get a "not allowed"
+    response to illustrate the bounds
+    built by the authorization module.
     """
 
     if 'username' not in login_session:
@@ -340,8 +372,9 @@ def update_item(category_id=0, item_id=0):
             msg = 'Only an owner of a item can edit it!'
             location = '/not_allowed'
 
-    except (SQLAlchemyError, exc.NoResultFound):
-        msg = 'A connection error occurred...'
+    except Exception as e:
+        print("Exception: %s" % e)
+        msg = 'An error occurred...'
         location = '/something_bad'
 
     flash(msg)
@@ -360,8 +393,9 @@ def show_item(item_id, category_id):
                                item=item,
                                active_route='home',
                                login_session=login_session)
-    except (SQLAlchemyError, exc.NoResultFound):
-        flash('A connection error occurred...')
+    except Exception as e:
+        print("Exception: %s" % e)
+        flash('An error occurred...')
         return redirect('/something_bad')
 
 
@@ -369,27 +403,34 @@ def show_item(item_id, category_id):
            methods=['POST'])
 def delete_item(category_id, item_id):
     """
-    This method let an user logged-in but create the item
-    to submit the form and get a "not allowed" response to
-    illustrate the bounds built by the authorization module.
+    This method lets an user logged-in
+    but not the owner of item to submit
+    the form and get a "not allowed"
+    response to illustrate the bounds
+    built by the authorization module.
     """
-    if login_session['email']:
-        item = session.query(Item) \
-            .filter_by(category_id=category_id) \
-            .filter_by(id=item_id).one()
+    try:
+        if login_session['email']:
+            item = session.query(Item) \
+                .filter_by(category_id=category_id) \
+                .filter_by(id=item_id).one()
 
-        if login_session['email'] == item.owner_mail:
-            session.delete(item)
-            session.commit()
-            msg = 'Item successfully deleted!'
-            location = '/category/%s' % item.category_id
+            if login_session['email'] == item.owner_mail:
+                session.delete(item)
+                session.commit()
+                msg = 'Item successfully deleted!'
+                location = '/category/%s' % item.category_id
+            else:
+                msg = 'Only an owner of a item can delete it!'
+                location = '/not_allowed'
+
         else:
-            msg = 'Only an owner of a item can delete it!'
+            msg = 'Only logged in users can delete items!'
             location = '/not_allowed'
-
-    else:
-        msg = 'Only logged in users can delete items!'
-        location = '/not_allowed'
+    except Exception as e:
+        print("Exception: %s" % e)
+        msg = 'An error occurred...'
+        location = '/something_bad'
 
     flash(msg)
     return redirect(location)
