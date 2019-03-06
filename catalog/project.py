@@ -6,6 +6,7 @@ from database_setup import Base, Category, Item
 import random
 import string
 import json
+import logging
 from datetime import datetime, timedelta
 import httplib2
 import requests
@@ -65,11 +66,17 @@ try:
         print("... some data are here!")
 
 except Exception as excp:
-    print("Unable to connect to database: %s" % excp)
+    logging.error("Unable to connect to database: %s" % excp)
 
 
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
+    """
+    A method that is called via AJAX to perform
+    user log in over OAuth2 protocol.
+
+    :return: HTTP Response
+    """
     # Validate state token
     if request.args.get('state') != login_session['state']:
         response = make_response(json.dumps('Invalid state parameter.'), 401)
@@ -174,6 +181,12 @@ def gconnect():
 
 @app.route('/login')
 def login_page():
+    """
+    A login page that supports Google Accounts login
+    via OAuth2 protocol.
+
+    :return: HTML
+    """
     state = ''.join(random.choice(
         string.ascii_uppercase + string.digits
     ) for x in range(32))
@@ -186,6 +199,12 @@ def login_page():
 
 @app.route('/gdisconnect')
 def gdisconnect():
+    """
+    A method that is called via AJAX to perform
+    user log off over OAuth2 protocol.
+
+    :return: HTTP Response
+    """
     access_token = login_session.get('access_token')
     if access_token is None:
         print('Access Token is None')
@@ -226,6 +245,12 @@ def gdisconnect():
 
 @app.route('/catalog_app/JSON')
 def catalog_app_json():
+    """
+    A JSON endpoint that displays entire catalog data.
+
+    It shows categories with items information.
+    :return: JSON
+    """
     all_categories = session.query(Category)\
                         .options(lazyload(Category.items)).all()
     return jsonify(
@@ -235,11 +260,21 @@ def catalog_app_json():
 
 @app.route('/logout')
 def logout():
+    """
+    A page to confirm user log off.
+
+    :return: HTML
+    """
     return render_template('logout.html', active_route='')
 
 
 @app.route('/something_bad')
 def something_bad():
+    """
+    A page to handle not ok operations.
+
+    :return: HTML
+    """
     return render_template('something_bad.html',
                            active_route='',
                            error="Something bad happened.",
@@ -248,6 +283,10 @@ def something_bad():
 
 @app.route('/not_allowed')
 def not_allowed():
+    """
+    A page to handle not authorized operations.
+    :return: HTML
+    """
     return render_template('something_bad.html',
                            active_route='',
                            error="Sorry, you're not allowed to do that.",
@@ -256,6 +295,11 @@ def not_allowed():
 
 @app.route('/about')
 def about():
+    """
+    A page with some details about the project.
+
+    :return: HTML
+    """
     return render_template('about.html',
                            active_route='about',
                            login_session=login_session)
@@ -263,6 +307,12 @@ def about():
 
 @app.route('/')
 def home_page():
+    """
+    The initial page of the project.
+
+    It displays all categories and items.
+    :return: HTML
+    """
     try:
         categories = session.query(Category).order_by().all()
         items = session.query(Item).all()
@@ -273,12 +323,18 @@ def home_page():
                                login_session=login_session)
     except Exception as e:
         flash('An error occurred...')
-        print("Exception: %s" % e)
+        logging.error("Exception: %s" % e)
         return redirect('/something_bad')
 
 
 @app.route('/category/<int:category_id>')
 def show_category(category_id):
+    """
+    Shows a category from the catalog in HTML format.
+
+    :param category_id: category identifier
+    :return: JSON
+    """
     try:
         category = session.query(Category).filter_by(id=category_id).one()
         items = session.query(Item).filter_by(category_id=category_id).all()
@@ -288,13 +344,35 @@ def show_category(category_id):
                                active_route='',
                                login_session=login_session)
     except Exception as e:
-        print("Exception: %s" % e)
+        logging.error("Exception: %s" % e)
         flash('An error occurred...')
-    return redirect('/something_bad')
+        return redirect('/something_bad')
+
+
+@app.route('/category/<int:category_id>/JSON')
+def show_category_json(category_id):
+    """
+    Shows a category from the catalog in JSON format.
+
+    :param category_id: category identifier
+    :return: JSON
+    """
+    try:
+        category = session.query(Category).filter_by(id=category_id) \
+            .options(lazyload(Category.items)).one()
+        return jsonify(category=category.serialize_with_relations)
+    except Exception as e:
+        logging.error("Exception: %s" % e)
+        return jsonify(msg='An error occurred...')
 
 
 @app.route('/category/new', methods=['POST'])
 def create_category():
+    """
+    Creates and inserts a category into the catalog.
+
+    :return: JSON
+    """
     if 'username' not in login_session:
         return redirect('/not_allowed')
     try:
@@ -304,7 +382,7 @@ def create_category():
         msg = "Category %s successfully created!" % new_category.name
 
     except Exception as e:
-        print("Exception: %s" % e)
+        logging.error("Exception: %s" % e)
         msg = "An error occurred..."
 
     return jsonify(msg)
@@ -312,6 +390,13 @@ def create_category():
 
 @app.route('/category/<int:category_id>/item/new', methods=['POST', 'GET'])
 def create_item(category_id):
+    """
+    Creates and inserts an item into the catalog.
+
+    Only available with a valid `category_id`.
+    :param category_id: category identifier
+    :return: HTML
+    """
     if 'username' not in login_session:
         return redirect('/not_allowed')
 
@@ -340,7 +425,7 @@ def create_item(category_id):
             return redirect('/something_bad')
 
     except Exception as e:
-        print("Exception: %s" % e)
+        logging.error("Exception: %s" % e)
         msg = 'An error occurred...'
         location = '/something_bad'
 
@@ -350,13 +435,17 @@ def create_item(category_id):
 
 @app.route('/category/<int:category_id>/item/<int:item_id>/edit',
            methods=['POST'])
-def update_item(category_id=0, item_id=0):
+def update_item(category_id, item_id):
     """
     This method lets an user logged-in
     but not the owner of item to submit
     the form and get a "not allowed"
     response to illustrate the bounds
     built by the authorization module.
+
+    :param category_id: category identifier
+    :param item_id: item identifier
+    :return: HTML
     """
 
     if 'username' not in login_session:
@@ -383,7 +472,7 @@ def update_item(category_id=0, item_id=0):
             location = '/not_allowed'
 
     except Exception as e:
-        print("Exception: %s" % e)
+        logging.error("Exception: %s" % e)
         msg = 'An error occurred...'
         location = '/something_bad'
 
@@ -391,8 +480,33 @@ def update_item(category_id=0, item_id=0):
     return redirect(location)
 
 
+@app.route('/category/<int:category_id>/item/<int:item_id>/JSON')
+def show_item_json(category_id, item_id):
+    """
+    Shows an arbitrary item of the catalog in JSON format.
+
+    :param item_id: item identifier
+    :param category_id: category identifier
+    :return: JSON
+    """
+    try:
+        item = session.query(Item).filter_by(category_id=category_id) \
+            .filter_by(id=item_id).one()
+        return jsonify(item=item.serialize)
+    except Exception as e:
+        logging.error("Exception: %s" % e)
+        return jsonify(msg='An error occurred...')
+
+
 @app.route('/category/<int:category_id>/item/<int:item_id>')
 def show_item(item_id, category_id):
+    """
+    Shows an arbitrary item of the catalog in HTML format.
+
+    :param item_id: item identifier
+    :param category_id: category identifier
+    :return: HTML
+    """
     try:
         item = session.query(Item) \
             .filter_by(category_id=category_id) \
@@ -404,7 +518,7 @@ def show_item(item_id, category_id):
                                active_route='home',
                                login_session=login_session)
     except Exception as e:
-        print("Exception: %s" % e)
+        logging.error("Exception: %s" % e)
         flash('An error occurred...')
         return redirect('/something_bad')
 
@@ -418,6 +532,10 @@ def delete_item(category_id, item_id):
     the form and get a "not allowed"
     response to illustrate the bounds
     built by the authorization module.
+
+    :param category_id: category identifier
+    :param item_id: item identifier
+    :return: HTML
     """
     try:
         if login_session['email']:
@@ -438,7 +556,7 @@ def delete_item(category_id, item_id):
             msg = 'Only logged in users can delete items!'
             location = '/not_allowed'
     except Exception as e:
-        print("Exception: %s" % e)
+        logging.error("Exception: %s" % e)
         msg = 'An error occurred...'
         location = '/something_bad'
 
