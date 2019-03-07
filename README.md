@@ -5,18 +5,19 @@ This isn't a commercial project and has only academic purposes.
 # About
 This is an web application that provides a list of items within a variety of categories as well as provides an user authentication system.  Authenticated users will have the ability to post, edit and delete their own items.
 
-The solution was written using **Python** and **SQLite**. The **Material Design Lite** component library was used to develop graphical interface.
+The solution was written using **Python** and **SQLite**. The **Material Design Lite** component library was used to develop graphical interface.  
 It explores some concepts about:
 - Connections between an application and a database server
 - Use of imports and native modules of Python
 - Implementation of RESTful architecture
+- JSON endpoints that provides the same data as the HTML endpoints.
 - UI elements provided by **MDL** and UX improved.
 - Developing with frameworks: [Flask](http://flask.pocoo.org/)
 - Using an ORM: [SQLAlchemy](https://www.sqlalchemy.org/)
 - Authentication and authorization
 - Implementation of [OAuth2 using Google APIs in Python](https://developers.google.com/api-client-library/python/auth/web-app)
 - Exception and error handling with custom views and messages  
-(with app running, try: localhost:5000/not_allowed or localhost:5000/something_bad)
+(with app running, try visiting these endpoints: /not_allowed or /something_bad)
 
 * To illustrate some error handling, some funcionalities were defined as:
   - When editing an item, an user can see the button and submit the form about editing operation. But if the user is not the item owner then will be redirected to a "not allowed" page and receives a message telling what happened.
@@ -56,7 +57,13 @@ obs: A `catalogapp.db` file will hold the entire data from the application.
 ```python database_setup.py```
 
 7- Run database setup: \
-```python project.py```
+```python project.py```  
+
+# JSON endpoints
+The following endpoints supports data in JSON format:
+  - /catalog_app/JSON - provides data about the entire catalog with all its categories and respectively items
+  - /category/<int:category_id>/JSON - provides data about a specific category with its associated items.
+  - /category/<int:category_id>/item/<int:item_id>/JSON - provides data about a specific item.
 
 
 
