@@ -61,7 +61,7 @@ obs: A `catalogapp.db` file will hold the entire data from the application.
 
 # JSON endpoints
 The following endpoints supports data in JSON format:
-  - /catalog_app/JSON - provides data about the entire catalog with all its categories and respectively items
+  - /catalog_app/JSON - provides data about the entire catalog with all its categories and related items
   - /category/<int:category_id>/JSON - provides data about a specific category with its associated items.
   - /category/<int:category_id>/item/<int:item_id>/JSON - provides data about a specific item.
 
