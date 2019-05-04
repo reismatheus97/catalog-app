@@ -56,7 +56,7 @@ obs: A `catalogapp.db` file will hold the entire data from the application.
 6- Run database setup: \
 ```python database_setup.py```
 
-7- Run database setup: \
+7- Run the application: \
 ```python project.py```  
 
 # JSON endpoints
